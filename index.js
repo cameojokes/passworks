@@ -78,7 +78,7 @@ Passworks.prototype.matches = function matches(password) {
 		.then(function verify(verifyHash) {
 			return verifyHash === this.hash
 				? Promise.resolve(this).bind(this)
-				: Promise.reject(new Error('Password does not match'));
+				: Promise.reject(new RangeError('Password does not match'));
 		}.bind(this));
 };
 

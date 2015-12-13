@@ -35,7 +35,7 @@ describe('Passworks', function () {
 			done(new Error('No TypeError thrown'));
 		} catch (err) {
 			assert.match(err, /Passworks.init/);
-			assert.isTrue(err instanceof TypeError);
+			assert.instanceOf(err, TypeError);
 
 			done();
 		}
@@ -114,6 +114,21 @@ describe('Passworks', function () {
 			var pw = new Passworks();
 
 			return pw.digest('matchSecret').call('matches', 'matchSecret');
+		});
+
+		it('should reject an invalid password', function () {
+			Passworks.init(baseConfig);
+
+			var pw = new Passworks();
+
+			return pw.digest('matchSecret').call('matches', 'bad')
+				.then(function () {
+					throw new Error('Shouldn\'t match');
+				})
+				.catch(RangeError, function (err) {
+					assert.instanceOf(err, RangeError);
+					assert.match(err, /Password does not match/);
+				});
 		});
 	});
 });
