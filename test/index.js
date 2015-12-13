@@ -105,6 +105,18 @@ describe('Passworks', function () {
 					assert.equal(hash, crypto.createHash('SHA1').update('externalsecret').digest('hex'));
 				});
 		});
+
+		it('should throw on invalid strategy', function () {
+			Passworks.init(simpleConfig);
+
+			var pw = new Passworks({ strategy: 'invalid' });
+
+			return pw.digest('test')
+				.then(function () {
+					throw new Error('Should throw');
+				})
+				.catch(Passworks.StrategyError);
+		});
 	});
 
 	describe('#matches()', function () {
@@ -125,10 +137,7 @@ describe('Passworks', function () {
 				.then(function () {
 					throw new Error('Shouldn\'t match');
 				})
-				.catch(RangeError, function (err) {
-					assert.instanceOf(err, RangeError);
-					assert.match(err, /Password does not match/);
-				});
+				.catch(Passworks.PasswordError);
 		});
 	});
 
@@ -143,8 +152,8 @@ describe('Passworks', function () {
 			try {
 				Passworks.addStrategy('test');
 			} catch (err) {
-				assert.instanceOf(err, RangeError);
-				assert.match(err, /Strategy "test" already exists/);
+				assert.instanceOf(err, Passworks.StrategyError);
+				assert.match(err, /already exists/);
 
 				return;
 			}
@@ -156,7 +165,7 @@ describe('Passworks', function () {
 			try {
 				Passworks.addStrategy('testNoFn');
 			} catch (err) {
-				assert.instanceOf(err, RangeError);
+				assert.instanceOf(err, Passworks.StrategyError);
 				assert.match(err, /Expected second argument "fn" to be a function/);
 
 				return;

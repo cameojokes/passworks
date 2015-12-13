@@ -1,5 +1,6 @@
 var Promise = require('bluebird');
 var crypto = Promise.promisifyAll(require('crypto'));
+var util = require('util');
 
 var _ = require('lodash');
 
@@ -54,7 +55,11 @@ Passworks.prototype.genSalt = function salt() {
  * @method digest
  */
 Passworks.prototype.digest = function digest(password, returnHash) {
-	return Promise.resolve(this.strategies[this.strategy].apply(this, arguments))
+	if (!this.strategies[this.strategy]) {
+		return Promise.reject(new Passworks.StrategyError('Invalid strategy: "' + this.strategy + '"'));
+	}
+
+	return Promise.resolve(this.strategies[this.strategy].call(this, password))
 		.bind(this)
 		.then(function resolveHash(hash) {
 			if (returnHash) return hash;
@@ -78,7 +83,7 @@ Passworks.prototype.matches = function matches(password) {
 		.then(function verify(verifyHash) {
 			return verifyHash === this.hash
 				? Promise.resolve(this).bind(this)
-				: Promise.reject(new RangeError('Password does not match'));
+				: Promise.reject(new Passworks.PasswordError('Password does not match'));
 		}.bind(this));
 };
 
@@ -125,7 +130,7 @@ Passworks.fromString = function fromString(passwordString) {
 			hash: passwordParts[5]
 		};
 	} else {
-		throw new RangeError('passwordString must contain 6 parts demilited by :');
+		throw new Passworks.Error('passwordString must contain 6 parts demilited by :');
 	}
 
 	return new Passworks(options);
@@ -142,6 +147,24 @@ Passworks.init = function init(initConf) {
 	conf = initConf;
 };
 
+Passworks.Error = function PassworksError(message) {
+	Error.call(this);
+	this.message = message;
+};
+util.inherits(Passworks.Error, Error);
+
+Passworks.PasswordError = function PasswordError(message) {
+	Error.call(this);
+	this.message = message;
+};
+util.inherits(Passworks.PasswordError, Passworks.Error);
+
+Passworks.StrategyError = function StrategyError(message) {
+	Error.call(this);
+	this.message = message;
+};
+util.inherits(Passworks.StrategyError, Passworks.Error);
+
 Passworks.prototype.strategies = {};
 
 /**
@@ -154,10 +177,10 @@ Passworks.prototype.strategies = {};
  */
 Passworks.addStrategy = function addStrategy(strategy, fn) {
 	if (Passworks.prototype.strategies.hasOwnProperty(strategy)) {
-		throw new RangeError('Strategy "' + strategy + '" already exists.');
+		throw new Passworks.StrategyError('Strategy "' + strategy + '" already exists.');
 	}
 	if (typeof fn !== 'function') {
-		throw new RangeError('Expected second argument "fn" to be a function');
+		throw new Passworks.StrategyError('Expected second argument "fn" to be a function.');
 	}
 
 	Passworks.prototype.strategies[strategy] = fn;
