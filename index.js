@@ -15,7 +15,7 @@ var conf;
  * @param {string} options.strategy 	The key of the strategy to use when digest() is called.
  * @param {string} options.algorithm 	The algorithm to be used(SHA1, SHA256, SHA512)
  * @param {number} options.iterations	The number of hash iterations.
- * @param {number} options.keyLen 		The byte length of the key. Used for salt and digest.
+ * @param {number} options.keyLength 		The byte length of the key. Used for salt and digest.
  */
 function Passworks(options) {
 	if (typeof conf !== 'object') {
@@ -32,7 +32,7 @@ function Passworks(options) {
 }
 
 /**
- * Generate a salt using the current keyLen.
+ * Generate a salt using the current keyLength.
  *
  * @return {string} The salt string.
  *
@@ -40,7 +40,7 @@ function Passworks(options) {
  * @method genSalt
  */
 Passworks.prototype.genSalt = function salt() {
-	return crypto.randomBytes(parseInt(conf.keyLen, 10)).toString('hex');
+	return crypto.randomBytes(parseInt(conf.keyLength, 10)).toString('hex');
 };
 
 /**
@@ -84,7 +84,7 @@ Passworks.prototype.matches = function matches(password) {
 
 /**
  * Return the current instance as a string. Useful to persist to a database.
- * @return {string} 	A : delimited string of the pattern strategy:algorithm:iterations:keyLen:salt:hash
+ * @return {string} 	A : delimited string of the pattern strategy:algorithm:iterations:keyLength:salt:hash
  *
  * @memberof Passworks
  * @method toString
@@ -94,7 +94,7 @@ Passworks.prototype.toString = function toString() {
 		this.strategy,
 		this.algorithm,
 		this.iterations,
-		this.keyLen,
+		this.keyLength,
 		this.salt,
 		this.hash
 	];
@@ -112,15 +112,15 @@ Passworks.prototype.toString = function toString() {
  * @method fromString
  */
 Passworks.fromString = function fromString(passwordString) {
-	var passwordParts = passwordString.split(':');
+	var passwordParts = (passwordString || '').split(':');
 	var options = {};
 
 	if (passwordParts.length === 6) {
 		options = {
 			strategy: passwordParts[0],
-			digest: passwordParts[1],
+			algorithm: passwordParts[1],
 			iterations: parseInt(passwordParts[2], 10),
-			keyLen: parseInt(passwordParts[3], 10),
+			keyLength: parseInt(passwordParts[3], 10),
 			salt: passwordParts[4],
 			hash: passwordParts[5]
 		};
@@ -165,7 +165,7 @@ Passworks.addStrategy = function addStrategy(strategy, fn) {
 
 var defaultStrategies = {
 	pbkdf2: function pbkdf2(password, returnHash) {
-		return crypto.pbkdf2Async(password, this.salt, this.iterations, parseInt(this.keyLen, 10))
+		return crypto.pbkdf2Async(password, this.salt, this.iterations, parseInt(this.keyLength, 10))
 			.call('toString', 'hex');
 	}
 };

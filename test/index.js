@@ -6,8 +6,8 @@ var _ = require('lodash');
 
 var Passworks = require('../index');
 
-var baseConfig = { keyLen: 64, strategy: 'pbkdf2', iterations: 128000 };
-var md5Config = _.defaults({ algorithm: 'SHA1', strategy: 'simple' }, baseConfig);
+var simpleConfig = { keyLength: 64, strategy: 'pbkdf2', iterations: 1000 };
+var md5Config = _.defaults({ algorithm: 'SHA1', strategy: 'simple' }, simpleConfig);
 
 function simpleStrategy(password) {
 	return crypto.createHash(this.algorithm).update(password).digest('hex');
@@ -19,11 +19,11 @@ describe('Passworks', function () {
 	});
 
 	it('should instantiate with config', function (done) {
-		Passworks.init({ keyLen: 64 });
+		Passworks.init({ keyLength: 64 });
 
 		var pw = new Passworks();
 
-		assert.equal(pw.keyLen, 64);
+		assert.equal(pw.keyLength, 64);
 
 		done();
 	});
@@ -43,7 +43,7 @@ describe('Passworks', function () {
 
 	describe('#genSalt()', function () {
 		it('should generate a salt on instantiation', function () {
-			Passworks.init({ keyLen: 100 });
+			Passworks.init({ keyLength: 100 });
 
 			var pw = new Passworks();
 
@@ -51,7 +51,7 @@ describe('Passworks', function () {
 		});
 
 		it('should generate a salt with the configured length', function () {
-			Passworks.init({ keyLen: 100 });
+			Passworks.init({ keyLength: 100 });
 
 			var pw = new Passworks();
 
@@ -59,7 +59,7 @@ describe('Passworks', function () {
 		});
 
 		it('should generate a salt with the configured length as a string', function () {
-			Passworks.init({ keyLen: '101' });
+			Passworks.init({ keyLength: '101' });
 
 			var pw = new Passworks();
 
@@ -69,7 +69,7 @@ describe('Passworks', function () {
 
 	describe('#digest()', function () {
 		it('should resolve the instance', function () {
-			Passworks.init(baseConfig);
+			Passworks.init(simpleConfig);
 
 			var pw = new Passworks();
 
@@ -80,12 +80,12 @@ describe('Passworks', function () {
 		});
 
 		it('should resolve the hash', function () {
-			Passworks.init(baseConfig);
+			Passworks.init(simpleConfig);
 
 			var pw = new Passworks();
 
 			return Promise.all([
-				crypto.pbkdf2Async('resolvesecret', pw.salt, baseConfig.iterations, baseConfig.keyLen).call('toString', 'hex'),
+				crypto.pbkdf2Async('resolvesecret', pw.salt, simpleConfig.iterations, simpleConfig.keyLength).call('toString', 'hex'),
 				pw.digest('resolvesecret').get('hash')
 			])
 				.spread(function (expectedHash, actualHash) {
@@ -109,7 +109,7 @@ describe('Passworks', function () {
 
 	describe('#matches()', function () {
 		it('should match a password', function () {
-			Passworks.init(baseConfig);
+			Passworks.init(simpleConfig);
 
 			var pw = new Passworks();
 
@@ -117,7 +117,7 @@ describe('Passworks', function () {
 		});
 
 		it('should reject an invalid password', function () {
-			Passworks.init(baseConfig);
+			Passworks.init(simpleConfig);
 
 			var pw = new Passworks();
 
@@ -163,6 +163,40 @@ describe('Passworks', function () {
 			}
 
 			assert.fail(null, null, 'Expected RangeError');
+		});
+	});
+
+	describe('#fromString()', function () {
+		it('should return an instance', function () {
+			Passworks.init(simpleConfig);
+
+			var pw = Passworks.fromString(':::::');
+
+			assert.instanceOf(pw, Passworks);
+		});
+
+		it('should set the expected properties', function () {
+			Passworks.init(simpleConfig);
+
+			var pw = Passworks.fromString('strat:alg:10:20:sa:ha');
+
+			assert.propertyVal(pw, 'strategy', 'strat');
+			assert.propertyVal(pw, 'algorithm', 'alg');
+			assert.propertyVal(pw, 'iterations', 10);
+			assert.propertyVal(pw, 'keyLength', 20);
+			assert.propertyVal(pw, 'salt', 'sa');
+			assert.propertyVal(pw, 'hash', 'ha');
+		});
+	});
+
+	describe('#toString()', function () {
+		it('should convert to string', function () {
+			Passworks.init(simpleConfig);
+
+			var pwString = 'strat:alg:10:20:sa:ha';
+			var pw = Passworks.fromString(pwString);
+
+			assert.equal(pw.toString(), pwString);
 		});
 	});
 });
