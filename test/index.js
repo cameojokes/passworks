@@ -131,4 +131,38 @@ describe('Passworks', function () {
 				});
 		});
 	});
+
+	describe('#addStrategy', function () {
+		it('should add a strategy', function () {
+			Passworks.addStrategy('test', function () {});
+
+			assert.deepProperty(Passworks, 'prototype.strategies.test');
+		});
+
+		it('should throw when attempting to replace an existing strategy', function () {
+			try {
+				Passworks.addStrategy('test');
+			} catch (err) {
+				assert.instanceOf(err, RangeError);
+				assert.match(err, /Strategy "test" already exists/);
+
+				return;
+			}
+
+			assert.fail(null, null, 'Expected RangeError');
+		});
+
+		it('should throw when fn is not a function', function () {
+			try {
+				Passworks.addStrategy('testNoFn');
+			} catch (err) {
+				assert.instanceOf(err, RangeError);
+				assert.match(err, /Expected second argument "fn" to be a function/);
+
+				return;
+			}
+
+			assert.fail(null, null, 'Expected RangeError');
+		});
+	});
 });

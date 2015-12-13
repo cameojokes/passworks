@@ -156,6 +156,9 @@ Passworks.addStrategy = function addStrategy(strategy, fn) {
 	if (Passworks.prototype.strategies.hasOwnProperty(strategy)) {
 		throw new RangeError('Strategy "' + strategy + '" already exists.');
 	}
+	if (typeof fn !== 'function') {
+		throw new RangeError('Expected second argument "fn" to be a function');
+	}
 
 	Passworks.prototype.strategies[strategy] = fn;
 };
