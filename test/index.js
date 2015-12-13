@@ -6,8 +6,8 @@ var _ = require('lodash');
 
 var Passworks = require('../index');
 
-var simpleConfig = { keyLength: 64, strategy: 'pbkdf2', iterations: 1000 };
-var md5Config = _.defaults({ algorithm: 'SHA1', strategy: 'simple' }, simpleConfig);
+var simpleConfig = { keyLength: 64, strategy: 'pbkdf2', iterations: 1000, algorithm: 'SHA1' };
+var sha1Config = _.defaults({ algorithm: 'SHA1', strategy: 'simple' }, simpleConfig);
 
 function simpleStrategy(password) {
 	return crypto.createHash(this.algorithm).update(password).digest('hex');
@@ -43,7 +43,7 @@ describe('Passworks', function () {
 
 	describe('#genSalt()', function () {
 		it('should generate a salt on instantiation', function () {
-			Passworks.init({ keyLength: 100 });
+			Passworks.init(simpleConfig);
 
 			var pw = new Passworks();
 
@@ -51,7 +51,7 @@ describe('Passworks', function () {
 		});
 
 		it('should generate a salt with the configured length', function () {
-			Passworks.init({ keyLength: 100 });
+			Passworks.init(_.defaults({ keyLength: 100 }, simpleConfig));
 
 			var pw = new Passworks();
 
@@ -94,7 +94,7 @@ describe('Passworks', function () {
 		});
 
 		it('should digest an external strategy', function () {
-			Passworks.init(md5Config);
+			Passworks.init(sha1Config);
 
 			Passworks.addStrategy('simple', simpleStrategy);
 
